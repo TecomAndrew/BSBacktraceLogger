@@ -112,7 +112,20 @@ static mach_port_t main_thread_id;
 NSString *_bs_backtraceOfThread(thread_t thread) {
     uintptr_t backtraceBuffer[50];
     int i = 0;
-    NSMutableString *resultString = [[NSMutableString alloc] initWithFormat:@"Backtrace of Thread %u:\n", thread];
+    NSMutableString *resultString = [[NSMutableString alloc] initWithFormat:@"Backtrace of Thread %u", thread];
+    
+    if (thread == main_thread_id) {
+        [resultString appendFormat:@" main"];
+    } else {
+        pthread_t pthread = pthread_from_mach_thread_np(thread);
+        if (pthread != 0) {
+            char threadName[1024] = {0};
+            pthread_getname_np(pthread, threadName, sizeof(threadName));
+            [resultString appendFormat:@" %s", threadName];
+        }
+    }
+    
+    [resultString appendFormat:@":\n"];
     
     _STRUCT_MCONTEXT machineContext;
     if(!bs_fillThreadStateIntoMachineContext(thread, &machineContext)) {
